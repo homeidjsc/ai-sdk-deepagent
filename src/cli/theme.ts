@@ -94,7 +94,7 @@ export const SLASH_COMMANDS: SlashCommand[] = [
   {
     command: "/apikey",
     aliases: ["/key", "/api"],
-    description: "Add or update API key (interactive)",
+    description: "Manage API keys (interactive)",
   },
   {
     command: "/model",

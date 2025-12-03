@@ -40,7 +40,6 @@ import {
   StatusBar,
   ModelSelectionPanel,
   ApiKeyInputPanel,
-  ApiKeyStatus,
   type MessageData,
 } from "./components/index.js";
 import { parseCommand, colors, SLASH_COMMANDS } from "./theme.js";
@@ -182,7 +181,7 @@ interface AppProps {
   backend: FilesystemBackend;
 }
 
-type PanelView = "none" | "help" | "todos" | "files" | "file-content" | "apikey" | "apikey-input" | "features" | "tokens" | "models";
+type PanelView = "none" | "help" | "todos" | "files" | "file-content" | "apikey-input" | "features" | "tokens" | "models";
 
 interface PanelState {
   view: PanelView;
@@ -306,7 +305,7 @@ function App({ options, backend }: AppProps): React.ReactElement {
       case "apikey":
       case "key":
       case "api":
-        // Always show interactive API key input panel
+        // Always show interactive API key panel
         setPanel({ view: "apikey-input" });
         break;
 
@@ -418,11 +417,10 @@ function App({ options, backend }: AppProps): React.ReactElement {
       {panel.view === "file-content" && panel.filePath && panel.fileContent && (
         <FilePreview path={panel.filePath} content={panel.fileContent} />
       )}
-      {panel.view === "apikey" && <ApiKeyStatus />}
       {panel.view === "apikey-input" && (
         <ApiKeyInputPanel
           onKeySaved={() => {
-            // Key saved, will auto-close
+            // Key saved, returns to provider selection automatically
           }}
           onClose={() => setPanel({ view: "none" })}
         />

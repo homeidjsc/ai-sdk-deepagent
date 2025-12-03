@@ -1,5 +1,6 @@
 /**
  * API Key Input Panel - Interactive provider selection and key input.
+ * Shows current status and allows adding/updating keys.
  */
 
 import React, { useState } from "react";
@@ -26,6 +27,16 @@ export function ApiKeyInputPanel({
   const [apiKey, setApiKey] = useState("");
   const [error, setError] = useState<string | null>(null);
 
+  // Get current API keys
+  const anthropicKey = process.env.ANTHROPIC_API_KEY;
+  const openaiKey = process.env.OPENAI_API_KEY;
+
+  const maskKey = (key: string | undefined) => {
+    if (!key) return null;
+    if (key.length <= 8) return "•".repeat(key.length);
+    return key.substring(0, 10) + "..." + key.substring(key.length - 4);
+  };
+
   // Handle keyboard input
   useInput((input, key) => {
     if (step === "select-provider") {
@@ -33,10 +44,18 @@ export function ApiKeyInputPanel({
         setSelectedProvider("anthropic");
         setStep("enter-key");
         setError(null);
+        // Pre-fill existing key if available
+        if (anthropicKey) {
+          setApiKey(anthropicKey);
+        }
       } else if (input === "2" || input.toLowerCase() === "o") {
         setSelectedProvider("openai");
         setStep("enter-key");
         setError(null);
+        // Pre-fill existing key if available
+        if (openaiKey) {
+          setApiKey(openaiKey);
+        }
       } else if (key.escape) {
         onClose?.();
       }
@@ -45,6 +64,7 @@ export function ApiKeyInputPanel({
         // Go back to provider selection
         setStep("select-provider");
         setApiKey("");
+        setSelectedProvider(null);
         setError(null);
       } else if (key.return) {
         // Validate and save
@@ -73,9 +93,11 @@ export function ApiKeyInputPanel({
         setStep("success");
         onKeySaved?.(selectedProvider!, apiKey.trim());
 
-        // Auto-close after success
+        // Auto-return to provider selection after success
         setTimeout(() => {
-          onClose?.();
+          setStep("select-provider");
+          setApiKey("");
+          setSelectedProvider(null);
         }, 1500);
       } else if (key.backspace || key.delete) {
         setApiKey((prev) => prev.slice(0, -1));
@@ -86,12 +108,15 @@ export function ApiKeyInputPanel({
       }
     } else if (step === "success") {
       if (key.return || key.escape) {
-        onClose?.();
+        // Return to provider selection
+        setStep("select-provider");
+        setApiKey("");
+        setSelectedProvider(null);
       }
     }
   });
 
-  const maskKey = (key: string): string => {
+  const maskKeyForInput = (key: string): string => {
     if (key.length <= 8) return "•".repeat(key.length);
     return key.substring(0, 7) + "•".repeat(Math.min(key.length - 11, 20)) + key.substring(key.length - 4);
   };
@@ -106,24 +131,61 @@ export function ApiKeyInputPanel({
       marginY={1}
     >
       <Text bold color={colors.info}>
-        {emoji.key} API Key Setup
+        {emoji.key} API Key Management
       </Text>
+      <Box height={1} />
+
+      {/* Always show current status */}
+      <Text bold>Current Status:</Text>
+      <Box height={1} />
+      <Box marginLeft={2}>
+        {anthropicKey ? (
+          <>
+            <Text color={colors.success}>✓ </Text>
+            <Text>Anthropic: </Text>
+            <Text dimColor>{maskKey(anthropicKey)}</Text>
+          </>
+        ) : (
+          <>
+            <Text color={colors.warning}>✗ </Text>
+            <Text>Anthropic: </Text>
+            <Text dimColor>not set</Text>
+          </>
+        )}
+      </Box>
+      <Box marginLeft={2}>
+        {openaiKey ? (
+          <>
+            <Text color={colors.success}>✓ </Text>
+            <Text>OpenAI: </Text>
+            <Text dimColor>{maskKey(openaiKey)}</Text>
+          </>
+        ) : (
+          <>
+            <Text color={colors.warning}>✗ </Text>
+            <Text>OpenAI: </Text>
+            <Text dimColor>not set</Text>
+          </>
+        )}
+      </Box>
       <Box height={1} />
 
       {step === "select-provider" && (
         <>
-          <Text>Select a provider:</Text>
+          <Text bold>Add or Update Key:</Text>
           <Box height={1} />
           <Box marginLeft={2}>
             <Text color={colors.primary}>[1]</Text>
             <Text> Anthropic (Claude)</Text>
+            {anthropicKey && <Text dimColor> (overwrite)</Text>}
           </Box>
           <Box marginLeft={2}>
             <Text color={colors.primary}>[2]</Text>
             <Text> OpenAI (GPT)</Text>
+            {openaiKey && <Text dimColor> (overwrite)</Text>}
           </Box>
           <Box height={1} />
-          <Text dimColor>Press 1 or 2 to select, Esc to cancel</Text>
+          <Text dimColor>Press 1 or 2 to select, Esc to close</Text>
         </>
       )}
 
@@ -135,11 +197,17 @@ export function ApiKeyInputPanel({
               {selectedProvider === "anthropic" ? "Anthropic" : "OpenAI"}
             </Text>{" "}
             API key:
+            {selectedProvider === "anthropic" && anthropicKey && (
+              <Text dimColor> (current: {maskKey(anthropicKey)})</Text>
+            )}
+            {selectedProvider === "openai" && openaiKey && (
+              <Text dimColor> (current: {maskKey(openaiKey)})</Text>
+            )}
           </Text>
           <Box height={1} />
           <Box>
             <Text dimColor>{">"} </Text>
-            <Text>{apiKey ? maskKey(apiKey) : <Text dimColor>Paste your API key here...</Text>}</Text>
+            <Text>{apiKey ? maskKeyForInput(apiKey) : <Text dimColor>Paste your API key here...</Text>}</Text>
             <Text color={colors.primary}>█</Text>
           </Box>
           {error && (
@@ -160,7 +228,7 @@ export function ApiKeyInputPanel({
             {selectedProvider === "anthropic" ? "Anthropic" : "OpenAI"}!
           </Text>
           <Box height={1} />
-          <Text dimColor>Press Enter or Esc to continue</Text>
+          <Text dimColor>Press Enter or Esc to return to menu</Text>
         </>
       )}
     </Box>
@@ -223,8 +291,10 @@ export function ApiKeyStatus(): React.ReactElement {
         )}
       </Box>
       <Box height={1} />
-      <Text dimColor>Use /apikey to add or update keys</Text>
+      <Text dimColor>Use /apikey set to add or update keys</Text>
     </Box>
   );
 }
+
+
 
