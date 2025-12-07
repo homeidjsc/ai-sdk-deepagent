@@ -155,7 +155,7 @@ const agent = createDeepAgent({
 Choose how files are stored:
 
 ```typescript
-import { createDeepAgent, StateBackend, FilesystemBackend, PersistentBackend, InMemoryStore } from 'ai-sdk-deep-agent';
+import { createDeepAgent, StateBackend, FilesystemBackend, PersistentBackend, InMemoryStore, LocalSandbox } from 'ai-sdk-deep-agent';
 import { anthropic } from '@ai-sdk/anthropic';
 
 // Default: In-memory (ephemeral)
@@ -174,6 +174,53 @@ const store = new InMemoryStore(); // Or implement KeyValueStore for Redis, SQLi
 const agent3 = createDeepAgent({
   model: anthropic('claude-sonnet-4-5-20250929'),
   backend: new PersistentBackend({ store, namespace: 'my-project' }),
+});
+
+// LocalSandbox: Execute shell commands + filesystem access
+// The 'execute' tool is automatically added when using LocalSandbox!
+const agent4 = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+  backend: new LocalSandbox({
+    cwd: './workspace',
+    timeout: 60000, // 60 second timeout for commands
+    env: { NODE_ENV: 'development' },
+  }),
+});
+
+// Manually add execute tool with FilesystemBackend
+// Use FilesystemBackend for file operations + LocalSandbox just for command execution
+import { createExecuteTool } from 'ai-sdk-deep-agent';
+
+const filesystemBackend = new FilesystemBackend({ rootDir: './agent-workspace' });
+const sandbox = new LocalSandbox({ cwd: './workspace' });
+
+const agent5 = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+  backend: filesystemBackend, // Files stored on disk
+  tools: {
+    execute: createExecuteTool({ backend: sandbox }), // Manual execute tool
+  },
+});
+
+// CompositeBackend: Combine FilesystemBackend + LocalSandbox
+// Route files to filesystem, but use sandbox for command execution
+import { CompositeBackend } from 'ai-sdk-deep-agent';
+
+const compositeBackend = new CompositeBackend(
+  new FilesystemBackend({ rootDir: './default' }),
+  {
+    '/workspace/': new LocalSandbox({ cwd: './workspace' }),
+  }
+);
+
+const sandboxForCommands = new LocalSandbox({ cwd: './workspace' });
+
+const agent6 = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+  backend: compositeBackend, // Files in /workspace/ use LocalSandbox, others use FilesystemBackend
+  tools: {
+    execute: createExecuteTool({ backend: sandboxForCommands }), // Manual execute tool
+  },
 });
 ```
 
@@ -241,6 +288,44 @@ Manages a task list for complex multi-step operations:
 | `glob` | Find files matching a pattern |
 | `grep` | Search for text within files |
 
+### Execute Tool (Sandbox Backends)
+
+When using a `LocalSandbox` backend (or any `SandboxBackendProtocol`), the `execute` tool is **automatically added**:
+
+| Tool | Description |
+|------|-------------|
+| `execute` | Execute shell commands in the sandbox environment |
+
+**Features:**
+
+- Runs commands in the sandbox's working directory
+- Returns command output, exit code, and truncation status
+- Supports timeout limits
+- Automatically available - no manual setup required!
+
+**Example:**
+
+```typescript
+import { createDeepAgent, LocalSandbox } from 'ai-sdk-deep-agent';
+import { anthropic } from '@ai-sdk/anthropic';
+
+const sandbox = new LocalSandbox({
+  cwd: './workspace',
+  timeout: 60000,
+});
+
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+  backend: sandbox, // execute tool is automatically added!
+});
+
+// Agent can now use execute tool to run commands like:
+// - npm install
+// - bun run build
+// - ls -la
+// - cat file.txt
+```
+
 ### Subagent: `task`
 
 Spawn isolated subagents for complex subtasks:
@@ -277,6 +362,12 @@ for await (const event of agent.streamWithEvents({ prompt: 'Build a todo app' })
     case 'file-written':
       console.log(`File written: ${event.path}`);
       break;
+    case 'execute-start':
+      console.log(`Executing: ${event.command}`);
+      break;
+    case 'execute-finish':
+      console.log(`Command finished with exit code: ${event.exitCode}`);
+      break;
     case 'todos-changed':
       console.log('Todos updated:', event.todos);
       break;
@@ -300,10 +391,121 @@ for await (const event of agent.streamWithEvents({ prompt: 'Build a todo app' })
 | `file-write-start` | File write starting (for preview) |
 | `file-written` | File was written |
 | `file-edited` | File was edited |
+| `execute-start` | Command execution started (sandbox backends) |
+| `execute-finish` | Command execution finished with exit code (sandbox backends) |
 | `subagent-start` | Subagent spawned |
 | `subagent-finish` | Subagent completed |
 | `done` | Generation complete |
 | `error` | Error occurred |
+
+## Sandbox Backend & Command Execution
+
+Use `LocalSandbox` to enable shell command execution alongside filesystem operations:
+
+```typescript
+import { createDeepAgent, LocalSandbox } from 'ai-sdk-deep-agent';
+import { anthropic } from '@ai-sdk/anthropic';
+import * as path from 'path';
+
+// Create a sandbox with a workspace directory
+const sandbox = new LocalSandbox({
+  cwd: path.join(process.cwd(), '.workspace'),
+  timeout: 60000, // 60 second timeout
+  env: { NODE_ENV: 'development' },
+});
+
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+  backend: sandbox, // execute tool is automatically added!
+});
+
+// Stream with events to see command execution
+for await (const event of agent.streamWithEvents({
+  prompt: 'Create a TypeScript project, install dependencies, and run it',
+})) {
+  switch (event.type) {
+    case 'execute-start':
+      console.log(`🔧 Running: ${event.command}`);
+      break;
+    case 'execute-finish':
+      console.log(`✓ Exit code: ${event.exitCode}`);
+      break;
+    case 'text':
+      process.stdout.write(event.text);
+      break;
+  }
+}
+```
+
+**Key Features:**
+
+- ✅ Execute tool automatically added when using `LocalSandbox`
+- ✅ Commands run in isolated workspace directory
+- ✅ Real-time event streaming for command execution
+- ✅ Timeout protection and environment variable support
+- ✅ Full filesystem access + command execution in one backend
+
+### Manually Adding Execute Tool with Other Backends
+
+If you want to use `FilesystemBackend` or other backends but still need command execution, you can manually add the `execute` tool:
+
+```typescript
+import { createDeepAgent, FilesystemBackend, LocalSandbox, createExecuteTool } from 'ai-sdk-deep-agent';
+import { anthropic } from '@ai-sdk/anthropic';
+
+// Use FilesystemBackend for file storage
+const filesystemBackend = new FilesystemBackend({ rootDir: './agent-workspace' });
+
+// Create a separate LocalSandbox just for command execution
+const commandSandbox = new LocalSandbox({
+  cwd: './workspace',
+  timeout: 60000,
+});
+
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+  backend: filesystemBackend, // Files stored on disk
+  tools: {
+    execute: createExecuteTool({ backend: commandSandbox }), // Manual execute tool
+  },
+});
+
+// Now agent can:
+// - Store files via FilesystemBackend (persistent on disk)
+// - Execute commands via LocalSandbox (separate workspace)
+```
+
+**Use Cases:**
+
+- ✅ Separate file storage from command execution workspace
+- ✅ Use different directories for files vs. command execution
+- ✅ Combine `FilesystemBackend` with command execution capabilities
+- ✅ Use `CompositeBackend` with manual execute tool for hybrid strategies
+
+**Example with CompositeBackend:**
+
+```typescript
+import { CompositeBackend, FilesystemBackend, LocalSandbox, createExecuteTool } from 'ai-sdk-deep-agent';
+
+// Route files to different backends based on path prefix
+const compositeBackend = new CompositeBackend(
+  new FilesystemBackend({ rootDir: './default' }),
+  {
+    '/workspace/': new LocalSandbox({ cwd: './workspace' }),
+  }
+);
+
+// Create a sandbox just for command execution
+const commandSandbox = new LocalSandbox({ cwd: './workspace' });
+
+const agent = createDeepAgent({
+  model: anthropic('claude-sonnet-4-5-20250929'),
+  backend: compositeBackend, // Files in /workspace/ use LocalSandbox, others use FilesystemBackend
+  tools: {
+    execute: createExecuteTool({ backend: commandSandbox }), // Manual execute tool
+  },
+});
+```
 
 ## Multi-turn Conversations
 
