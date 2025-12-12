@@ -1,3 +1,10 @@
+---
+description: Resume previously saved work by restoring full context and continuing implementation
+model: claude-sonnet-4-5-20250929
+allowed-tools: AskUserQuestion, Edit, Task, TodoWrite, Write, Bash(git:*), Bash(gh:*), Bash(basename:*), Bash(date:*)
+argument-hint: [session-summary-path]
+---
+
 # Resume Work
 
 You are tasked with resuming previously saved work by restoring full context and continuing implementation.

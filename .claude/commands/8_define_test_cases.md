@@ -1,3 +1,10 @@
+---
+description: Define automated acceptance test cases using Domain Specific Language (DSL) approach
+model: claude-haiku-4-5-20251001
+allowed-tools: AskUserQuestion, Edit, Task, TodoWrite, Write, Bash(git:*), Bash(gh:*), Bash(basename:*), Bash(date:*)
+argument-hint: [feature-to-test]
+---
+
 # Define Test Cases Command
 
 You are helping define automated acceptance test cases using a Domain Specific Language (DSL) approach.

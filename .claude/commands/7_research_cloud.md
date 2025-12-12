@@ -1,3 +1,10 @@
+---
+description: Conduct comprehensive READ-ONLY analysis of cloud deployments and infrastructure
+model: claude-sonnet-4-5-20250929
+allowed-tools: AskUserQuestion, Edit, Task, TodoWrite, Write, Bash(git:*), Bash(gh:*), Bash(basename:*), Bash(date:*), Bash(az:*), Bash(aws:*), Bash(gcloud:*)
+argument-hint: [cloud-platform-and-scope]
+---
+
 # Research Cloud Infrastructure
 
 You are tasked with conducting comprehensive READ-ONLY analysis of cloud deployments and infrastructure using cloud-specific CLI tools (az, aws, gcloud, etc.).

@@ -1,3 +1,10 @@
+---
+description: Validate that an implementation plan was correctly executed, verifying all success criteria
+model: claude-sonnet-4-5-20250929
+allowed-tools: AskUserQuestion, Edit, Task, TodoWrite, Write, Bash(git:*), Bash(gh:*), Bash(basename:*), Bash(date:*)
+argument-hint: [plan-path]
+---
+
 # Validate Plan
 
 You are tasked with validating that an implementation plan was correctly executed, verifying all success criteria and identifying any deviations or issues.

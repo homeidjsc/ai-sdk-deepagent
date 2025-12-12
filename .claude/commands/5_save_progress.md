@@ -1,3 +1,10 @@
+---
+description: Create comprehensive progress checkpoint when pausing work on a feature
+model: claude-haiku-4-5-20251001
+allowed-tools: AskUserQuestion, Edit, Task, TodoWrite, Write, Bash(git:*), Bash(gh:*), Bash(basename:*), Bash(date:*)
+argument-hint: [optional-context]
+---
+
 # Save Progress
 
 You are tasked with creating a comprehensive progress checkpoint when the user needs to pause work on a feature.

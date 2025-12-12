@@ -1,6 +1,6 @@
 ---
 description: Document codebase as-is with research directory for historical context
-model: opus
+model: claude-sonnet-4-5-20250929
 allowed-tools: AskUserQuestion, Edit, Task, TodoWrite, Write, Bash(git:*), Bash(gh:*), Bash(basename:*), Bash(date:*)
 argument-hint: [research-question]
 ---
