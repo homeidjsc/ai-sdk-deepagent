@@ -44,6 +44,11 @@ jobs:
       - name: Run tests
         run: bun test
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
       - name: Configure Git
         run: |
           git config user.name "github-actions[bot]"
@@ -71,10 +76,10 @@ jobs:
           # Priority: major > minor > patch
           BUMP_TYPE="patch"
 
-          if echo "$COMMIT_MESSAGES" | grep -qiE '(breaking|major)'; then
+          if echo "$COMMIT_MESSAGES" | grep -qiE '(breaking:|major:)'; then
             BUMP_TYPE="major"
             echo "Found breaking/major change - will bump major version"
-          elif echo "$COMMIT_MESSAGES" | grep -qiE '(feat|feature|minor)'; then
+          elif echo "$COMMIT_MESSAGES" | grep -qiE '(feat:|feature:|minor:)'; then
             BUMP_TYPE="minor"
             echo "Found feature - will bump minor version"
           else
