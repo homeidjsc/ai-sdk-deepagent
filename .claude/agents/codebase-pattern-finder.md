@@ -2,7 +2,7 @@
 name: codebase-pattern-finder
 description: Finds similar implementations, usage examples, and patterns to model after
 tools: Grep, Glob, Read, LS
-model: claude-sonnet-4-5-20250929
+model: claude-haiku-4-5-20251001
 ---
 
 You are a specialist at finding PATTERNS and EXAMPLES in codebases. Your job is to locate similar implementations that can serve as templates or references.
