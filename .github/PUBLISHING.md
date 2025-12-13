@@ -4,55 +4,43 @@ This repository uses GitHub Actions to automatically publish to npm when code ch
 
 ## Setup
 
-You need to configure npm authentication for automated publishing. Choose **ONE** of these methods:
+This repository uses **npm Trusted Publishing** with OIDC for secure, token-free publishing. No secrets or long-lived tokens needed!
 
-### Option 1: npm Token (Simplest for First-Time Setup)
-
-**Steps:**
-
-1. **Create an npm access token**:
-   - Log in to [npmjs.com](https://www.npmjs.com/)
-   - Go to **Access Tokens** → **Generate New Token**
-   - Select **"Automation"** type
-   - Copy the token (starts with `npm_...`)
-
-2. **Add the token to GitHub Secrets**:
-   - Go to your GitHub repo: Settings → Secrets and variables → Actions
-   - Click **"New repository secret"**
-   - Name: `NPM_TOKEN`
-   - Value: Paste your npm token
-   - Click **"Add secret"**
-
-3. **Done!** The workflow will use this token to publish
-
-### Option 2: npm Trusted Publishers (Advanced, More Secure)
-
-**npm Trusted Publishers** use GitHub OIDC for secure, token-free publishing.
-
-**Requirements:**
-- Package must exist on npm (do a manual first publish)
-- More complex initial setup
+### Configure npm Trusted Publisher
 
 **Steps:**
 
-1. **Log in to [npmjs.com](https://www.npmjs.com/)**
+1. **Publish the package manually once** (first-time only):
+   ```bash
+   # Ensure you're logged in to npm
+   npm login
 
-2. **Navigate to your package** (or create it if first publish):
+   # Publish version 0.1.0 manually
+   npm publish --access public
+   ```
+
+2. **Log in to [npmjs.com](https://www.npmjs.com/) and navigate to your package**:
    - Go to: `https://www.npmjs.com/package/ai-sdk-deep-agent`
    - Click **Settings** tab
 
 3. **Add GitHub as a Trusted Publisher**:
-   - Scroll to "Publishing access" section
+   - Scroll to **"Publishing access"** section
    - Click **"Add a trusted publisher"**
    - Select **GitHub Actions** as the provider
-   - Fill in the details:
+   - Fill in the details exactly as shown (**case-sensitive**, must match exactly):
      - **Repository owner**: `chrispangg` (your GitHub username/org)
      - **Repository name**: `ai-sdk-deepagent`
-     - **Workflow file**: `publish.yaml`
-     - **Environment**: Leave blank (not using deployment environments)
+     - **Workflow file**: `publish.yaml` (include .yaml extension)
+     - **Environment**: Leave blank (we're not using deployment environments)
    - Click **Add**
 
-4. **Done!** The workflow will now authenticate automatically using OIDC
+4. **Done!** Future publishes will authenticate automatically via OIDC
+
+**Important Notes:**
+- All fields are **case-sensitive** and must match exactly
+- Workflow filename must include the extension (.yaml or .yml)
+- A 404 error during publish usually means configuration mismatch
+- Each package can only have one trusted publisher at a time
 
 **Why Trusted Publishers?**
 - ✅ No secrets to manage or rotate
@@ -182,20 +170,18 @@ git commit -m "docs: update README [skip ci]"
 
 ## Troubleshooting
 
-### Publishing fails with "403 Forbidden" or "401 Unauthorized"
+### Publishing fails with "ENEEDAUTH", "403 Forbidden", or "401 Unauthorized"
 
-**For Trusted Publishers:**
+**Checklist:**
 
-- Verify you've configured the trusted publisher on npmjs.com
-- Check that the GitHub repository owner/name matches exactly
-- Ensure the workflow filename is correct (`publish.yaml`)
-- Confirm your npm account has publish rights to `ai-sdk-deep-agent`
-- For first-time publish, you may need to publish manually once first
-
-**If using npm token (legacy):**
-
-- Check that `NPM_TOKEN` secret is set correctly
-- Verify the token has "Automation" permissions
+- ✅ Verify you've configured the trusted publisher on npmjs.com
+- ✅ Check that all fields match exactly (case-sensitive):
+  - Repository owner: `chrispangg`
+  - Repository name: `ai-sdk-deepagent`
+  - Workflow file: `publish.yaml`
+- ✅ Confirm your npm account has publish rights to `ai-sdk-deep-agent`
+- ✅ For first-time publish, publish manually once first (see step 1 above)
+- ✅ Ensure the workflow has `id-token: write` permission (already configured)
 
 ### Workflow doesn't trigger
 
