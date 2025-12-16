@@ -99,8 +99,14 @@ For each issue category:
 4. **Resolve code quality issues**:
    - Fix linting errors
    - Resolve type errors
-   - Fix failing tests
+   - **Fix production code to make tests pass** - Tests define correct behavior, don't modify them
    - Improve code organization if needed
+
+   **When to modify tests**:
+   - ✅ Test has a bug (incorrect expectation)
+   - ✅ Requirements changed (documented in notes)
+   - ❌ Test is failing (fix production code instead)
+   - ❌ Test is "too strict" (tests define requirements)
 
 5. **Handle manual testing findings**:
    - Reproduce reported issues

@@ -14,7 +14,7 @@ You are tasked with implementing an approved technical plan from `docs/tickets/T
 When given a plan path:
 
 - Read the plan completely and check for any existing checkmarks (- [x])
-- **Read `test-cases.md`** - If `docs/tickets/TICKET-NAME/test-cases.md` exists, read it to understand test requirements
+- **Read test file** - If `test-cases.md` exists, it will reference the actual test file (e.g., `test/tools/web.test.ts`). Read the test file to understand what needs to be implemented
 - Read all files mentioned in the plan
 - **Read files fully** - never use limit/offset parameters
 - Create a todo list to track your progress
@@ -59,11 +59,12 @@ After implementing a phase:
    - Run all automated checks for that phase
    - Update plan checkboxes as you go
 
-2. **Test-Driven Implementation** (if `test-cases.md` exists):
-   - **Implement DSL functions** - Create any missing DSL functions identified in `test-cases.md`
-   - **Implement test cases** - Write actual test implementations based on test case definitions
-   - **Run tests frequently** - Ensure tests pass as you implement features
-   - **Follow DSL patterns** - Use existing DSL functions where available, create new ones following established patterns
+2. **Test-Driven Implementation** (if test file exists):
+   - **Tests already written** - Step 3 generated actual test code in `test/[feature]/[feature].test.ts`
+   - **Run tests to see failures** - Execute `bun test test/[feature]/[feature].test.ts` to understand what needs to be built
+   - **Implement production code** - Write code to make failing tests pass
+   - **Refactor while green** - Improve code quality while keeping all tests passing
+   - **Note**: Tests are specifications - they define correct behavior. Focus on making them pass, not modifying them
 
 3. **When You Get Stuck**:
    - First, ensure you've read and understood all relevant code
@@ -124,13 +125,14 @@ If the plan has existing checkmarks:
 When working on a ticket, maintain documentation in `docs/tickets/TICKET-NAME/`:
 
 - `plan.md` - The implementation plan (updated with checkboxes as you progress)
-- `test-cases.md` - Test case definitions and DSL function requirements (created by `/3_define_test_cases`)
+- `test-cases.md` - Lightweight index with line references to actual test file (created by `/3_define_test_cases`)
+  - **Note**: Actual test code is in `test/[feature]/[feature].test.ts`, not in this markdown file
 - `research.md` - Research findings (if applicable)
 - `notes-YYYY-MM-DD.md` - Implementation notes, new requirements, and decisions
 - `sessions/` - Session summaries (created by `/7_save_progress`)
 - `validation-report*.md` - Validation reports (created by `/5_validate_implementation`)
 
-All files in the ticket folder should be considered part of the implementation context. **If `test-cases.md` exists, you must implement both the feature AND the test cases/DSL functions defined within it.**
+All files in the ticket folder should be considered part of the implementation context. **If test file exists (referenced in `test-cases.md`), tests are already written - your job is to implement production code to make them pass.**
 
 ## Post-Implementation Workflow
 

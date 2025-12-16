@@ -39,13 +39,13 @@ When invoked:
 2. **Identify what should have changed**:
    - List all files that should be modified (from plan + notes)
    - Note all success criteria (automated and manual) from plan and any additions from notes
-   - **If `test-cases.md` exists**: Identify which test cases and DSL functions should be implemented
+   - **If test file exists**: Identify test file location (referenced in `test-cases.md`)
    - Identify key functionality to verify (considering both original plan and new requirements from notes)
 
 3. **Spawn parallel research tasks** to discover implementation:
    - Verify code changes match plan specifications AND any requirements from notes
-   - **If `test-cases.md` exists**: Verify test cases are implemented and DSL functions are created
-   - Check if tests were added/modified as specified (plan + notes + test-cases.md)
+   - **If test file exists**: Run tests and verify they pass (tests were created in step 3)
+   - Check if production code makes tests pass
    - Validate that success criteria are met (plan + notes)
    - Verify that any new requirements from notes were properly implemented
 
@@ -59,10 +59,10 @@ For each phase in the plan:
 
 2. **Run automated verification**:
    - Execute each command from "Automated Verification"
-   - **If `test-cases.md` exists**: Run all test cases and verify they pass
-   - **If `test-cases.md` exists**: Verify all required DSL functions are implemented
-   - Document pass/fail status
-   - If failures, investigate root cause
+   - **If test file exists**: Run `bun test [test-file]` and verify 100% pass
+   - Verify no tests are skipped or pending
+   - Document pass/fail status with specific failing test names
+   - If failures, investigate root cause (production code bug, not test bug)
 
 3. **Assess manual criteria**:
    - List what needs manual testing
@@ -92,16 +92,16 @@ Create comprehensive validation summary:
 - ✓ Additional requirements from notes implemented (list key ones)
 - ⚠️ [Any requirements from notes not yet implemented]
 
-### Test Cases Coverage (if test-cases.md exists)
-- ✓ Test case 1: [Name] - Implemented and passing
-- ✓ Test case 2: [Name] - Implemented and passing
-- ⚠️ Test case 3: [Name] - Not implemented or failing
-- ✓ All required DSL functions implemented
-- ⚠️ Missing DSL functions: [list any missing]
+### Test Coverage (if test file exists)
+- ✓ All tests passing: `bun test [file]` (25/25 passing)
+- ✓ No skipped or pending tests
+- ⚠️ Failing tests:
+  - `[file].test.ts:[line]` - [test name] - [failure reason]
+- Coverage: [percentage if available]
 
 ### Automated Verification Results
 ✓ Build passes
-✓ Tests pass (including test-cases.md tests if applicable)
+✓ All tests pass: `bun test [file]` (25/25)
 ✗ Linting issues (3 warnings)
 
 ### Code Review Findings
@@ -114,10 +114,10 @@ Create comprehensive validation summary:
 - [Requirements from notes that were implemented]
 - [Decisions from notes that were followed]
 
-#### Matches Test Cases (if test-cases.md exists):
-- [Test cases that were correctly implemented]
-- [DSL functions that were created following patterns]
-- ⚠️ [Test cases or DSL functions missing or incorrectly implemented]
+#### Matches Test Specifications (if test file exists):
+- Production code makes all tests pass
+- Tests are unchanged from step 3 (tests define requirements)
+- ⚠️ Tests were modified (explain why and if justified)
 
 #### Deviations from Plan:
 - [Any differences from plan]

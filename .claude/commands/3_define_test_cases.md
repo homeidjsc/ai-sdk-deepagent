@@ -1,5 +1,5 @@
 ---
-description: Define automated acceptance test cases using Domain Specific Language (DSL) approach
+description: Generate executable BDD tests using Given-When-Then structure with minimal abstraction
 model: claude-haiku-4-5-20251001
 allowed-tools: AskUserQuestion, Edit, Task, TodoWrite, Write, Bash(git:*), Bash(gh:*), Bash(basename:*), Bash(date:*)
 argument-hint: [feature-to-test]
@@ -7,171 +7,178 @@ argument-hint: [feature-to-test]
 
 # Define Test Cases Command
 
-You are helping define automated acceptance test cases using a Domain Specific Language (DSL) approach.
+You are helping generate executable BDD (Behavior-Driven Development) tests following modern best practices (2024-2025).
 
 ## Core Principles
 
-1. **Comment-First Approach**: Always start by writing test cases as structured comments before any implementation.
+1. **Tests as Primary Artifact**: Generate actual runnable test code, not specification documents. Tests ARE the living documentation.
 
-2. **DSL at Every Layer**: All test code - setup, actions, assertions - must be written as readable DSL functions. No direct framework calls in test files.
+2. **Minimal Abstraction**: Use Given-When-Then comments for readability. Create helper functions ONLY when significant duplication exists (3+ times).
 
-3. **Implicit Given-When-Then**: Structure tests with blank lines separating setup, action, and assertion phases. Never use the words "Given", "When", or "Then" explicitly.
+3. **Native Framework**: Use bun:test with standard describe/test structure. No Cucumber/Gherkin - code is the specification.
 
-4. **Clear, Concise Language**: Function names should read like natural language and clearly convey intent.
+4. **Self-Documenting**: Tests should read like natural language specifications. Non-developers should understand what's being tested.
 
-5. **Follow Existing Patterns**: Study and follow existing test patterns, DSL conventions, and naming standards in the codebase.
+5. **Follow Existing Patterns**: Study and adapt to the project's established testing conventions and structure.
 
-## Test Case Structure
+## Test Structure
 
-```javascript
-// 1. Test Case Name Here
+```typescript
+describe("Feature Name", () => {
+  test("behavior description", async () => {
+    // Given: [preconditions - what exists before the action]
+    const state = { files: {}, todos: [] };
+    const tools = createWebTools(state, { apiKey: "test" });
 
-// setupFunction
-// anotherSetupFunction
-//
-// actionThatTriggersLogic
-//
-// expectationFunction
-// anotherExpectationFunction
+    // When: [action - what happens]
+    const result = await tools.web_search.execute({ query: "test" });
+
+    // Then: [expected outcome - what should be true]
+    expect(result).toContain("Result");
+    expect(result).toContain("https://");
+  });
+});
 ```
 
-### Structure Rules
+**Structure Rules**:
+- **Given**: Setup phase - create test state and preconditions
+- **When**: Action phase - trigger the behavior under test
+- **Then**: Assertion phase - verify expected outcomes
+- Use blank lines to separate phases visually
+- Write descriptive test names that explain the behavior
 
-- **First line**: Test case name with number
-- **Setup phase**: Functions that arrange test state (no blank line between them)
-- **Blank line**: Separates setup from action
-- **Action phase**: Function(s) that trigger the behavior under test
-- **Blank line**: Separates action from assertions
-- **Assertion phase**: Functions that verify expected outcomes (no blank line between them)
+## DSL Helper Guidelines
 
-## Naming Conventions
+Create helper functions ONLY when:
+- **Duplication threshold**: Same setup appears 3+ times
+- **Complex assertions**: 4+ expect() calls that logically belong together
+- **Mock configuration**: Complex mock setups reused frequently
 
-### Setup Functions (Arrange)
+Do NOT create helpers for:
+- Simple assertions (1-2 expect() calls)
+- One-off setups
+- Anything that doesn't significantly reduce duplication
 
-- Describe state being created: `userIsLoggedIn`, `cartHasThreeItems`, `databaseIsEmpty`
-- Use present tense verbs: `createUser`, `seedDatabase`, `mockExternalAPI`
+**Good helper examples**:
+```typescript
+// Used 15+ times across all tests
+function createMockState(): DeepAgentState {
+  return { files: {}, todos: [] };
+}
 
-### Action Functions (Act)
+// Complex 10-line setup used 5+ times
+function setupAuthenticatedUser() {
+  const user = createUser();
+  const session = createSession(user);
+  mockAuthService(session);
+  return { user, session };
+}
+```
 
-- Describe the event/action: `userClicksCheckout`, `orderIsSubmitted`, `apiReceivesRequest`
-- Use active voice: `submitForm`, `sendRequest`, `processPayment`
+**Bad helper examples** (don't create these):
+```typescript
+// Only used 2 times
+function expectToolsExist(tools: any) {
+  expect(tools).toBeDefined();
+}
 
-### Assertion Functions (Assert)
-
-- Start with `expect`: `expectOrderProcessed`, `expectUserRedirected`, `expectEmailSent`
-- Be specific: `expectOrderInSage`, `expectCustomerBecamePartnerInExigo`
-- Include negative cases: `expectNoEmailSent`, `expectOrderNotCreated`
+// Simple 1-liner
+function createEmptyArray() {
+  return [];
+}
+```
 
 ## Test Coverage Requirements
 
 When defining test cases, ensure you cover:
 
 ### 1. Happy Paths
+Standard successful flows where everything works as expected.
 
-```javascript
-// 1. Successful Standard Order Flow
+```typescript
+test("creates user successfully with valid data", async () => {
+  // Given: Valid user data
+  const userData = { email: "test@example.com", name: "Test User" };
 
-// userIsAuthenticated
-// cartContainsValidProduct
-//
-// userSubmitsOrder
-//
-// expectOrderCreated
-// expectPaymentProcessed
-// expectConfirmationEmailSent
-```
+  // When: Creating user
+  const result = await userService.create(userData);
 
-### 2. Edge Cases
-
-```javascript
-// 2. Order Submission With Expired Payment Method
-
-// userIsAuthenticated
-// cartContainsValidProduct
-// paymentMethodIsExpired
-//
-// userSubmitsOrder
-//
-// expectOrderNotCreated
-// expectPaymentDeclined
-// expectErrorMessageDisplayed
-```
-
-### 3. Error Scenarios
-
-```javascript
-// 3. Order Submission When External Service Unavailable
-
-// userIsAuthenticated
-// cartContainsValidProduct
-// externalPaymentServiceIsDown
-//
-// userSubmitsOrder
-//
-// expectOrderPending
-// expectRetryScheduled
-// expectUserNotifiedOfDelay
-```
-
-### 4. Boundary Conditions
-
-```javascript
-// 4. Order With Maximum Allowed Items
-
-// userIsAuthenticated
-// cartContainsMaximumItems
-//
-// userSubmitsOrder
-//
-// expectOrderCreated
-// expectAllItemsProcessed
-```
-
-### 5. Permission/Authorization Scenarios
-
-```javascript
-// 5. Unauthorized User Attempts Order
-
-// userIsNotAuthenticated
-//
-// userAttemptsToSubmitOrder
-//
-// expectOrderNotCreated
-// expectUserRedirectedToLogin
-```
-
-## Example Test Case
-
-Here's how a complete test case should look:
-
-```javascript
-test('1. Partner Kit Order with Custom Rank', async () => {
-  // shopifyOrderPlaced
-  //
-  // expectOrderProcessed
-  //
-  // expectOrderInSage
-  // expectPartnerInAbsorb
-  // expectOrderInExigo
-  // expectCustomerBecamePartnerInExigo
-
-  await shopifyOrderPlaced();
-
-  await expectOrderProcessed();
-
-  await expectOrderInSage();
-  await expectPartnerInAbsorb();
-  await expectOrderInExigo();
-  await expectCustomerBecamePartnerInExigo();
+  // Then: User should be created
+  expect(result.success).toBe(true);
+  expect(result.user.email).toBe("test@example.com");
 });
 ```
 
-Notice:
+### 2. Edge Cases
+Boundary conditions and unusual but valid inputs.
 
-- Test case defined first in comments
-- Blank lines separate setup, action, and assertion phases in comments
-- Implementation mirrors the comment structure exactly
-- Each DSL function reads like natural language
+```typescript
+test("handles maximum allowed items", async () => {
+  // Given: Cart with maximum items
+  const cart = createCart();
+  for (let i = 0; i < MAX_ITEMS; i++) {
+    cart.addItem({ id: i });
+  }
+
+  // When: Submitting order
+  const result = await orderService.submit(cart);
+
+  // Then: Order should be created with all items
+  expect(result.success).toBe(true);
+  expect(result.items).toHaveLength(MAX_ITEMS);
+});
+```
+
+### 3. Error Scenarios
+Invalid inputs, service failures, timeout conditions.
+
+```typescript
+test("handles API timeout gracefully", async () => {
+  // Given: Service configured to timeout
+  mockApiTimeout();
+
+  // When: Making request
+  const result = await apiClient.fetch("https://api.example.com");
+
+  // Then: Should return error message
+  expect(result).toContain("timed out");
+  expect(result).not.toContain("undefined");
+});
+```
+
+### 4. Boundary Conditions
+Maximum/minimum values, empty states, null cases.
+
+```typescript
+test("rejects empty input", async () => {
+  // Given: Empty string input
+  const input = "";
+
+  // When: Validating input
+  const result = validator.validate(input);
+
+  // Then: Should fail validation
+  expect(result.isValid).toBe(false);
+  expect(result.errors).toContain("Input cannot be empty");
+});
+```
+
+### 5. Authorization/Permission Scenarios
+Permission-based access and security checks.
+
+```typescript
+test("denies access to unauthorized users", async () => {
+  // Given: Unauthenticated user
+  const user = createUnauthenticatedUser();
+
+  // When: Attempting protected action
+  const result = await protectedService.execute(user);
+
+  // Then: Should be denied
+  expect(result.success).toBe(false);
+  expect(result.error).toContain("unauthorized");
+});
+```
 
 ## Workflow
 
@@ -180,93 +187,215 @@ When the user asks you to define test cases:
 ### 1. Understand the Feature
 
 Ask clarifying questions about:
-
 - What functionality is being tested
 - Which systems/services are involved
 - Expected behaviors and outcomes
 - Edge cases and error conditions
+- Authorization/permission requirements
 
 ### 2. Research Existing Test Patterns
 
-**IMPORTANT**: Before writing any test cases, use the Task tool to launch a codebase-pattern-finder agent to:
-
-- Find existing acceptance/integration test files
-- Identify current DSL function naming conventions
-- Understand test structure patterns used in the project
-- Discover existing DSL functions that can be reused
-- Learn how tests are organized and grouped
+**IMPORTANT**: Before writing any tests, use the Task tool to launch a codebase-pattern-finder agent to:
+- Find existing test files and their structure
+- Identify common helper patterns
+- Understand how mocks are configured
+- Discover reusable test utilities
+- Learn test organization conventions
 
 Example agent invocation:
-
 ```
 Use the Task tool with subagent_type="codebase-pattern-finder" to find:
-- Existing acceptance test files and their structure
-- DSL function patterns and naming conventions
-- Test organization patterns (describe blocks, test grouping)
-- Existing DSL functions for setup, actions, and assertions
+- Existing test files (*.test.ts) and their structure
+- Helper function patterns and naming conventions
+- Mock/setup patterns used in tests
+- Test organization patterns (describe blocks, beforeEach usage)
 ```
 
-### 3. Define Test Cases in Comments
+### 3. Generate Test File
 
-Create comprehensive test scenarios covering:
+Create the actual test code file with:
 
-- **Happy paths**: Standard successful flows
-- **Edge cases**: Boundary conditions, unusual but valid inputs
-- **Error scenarios**: Invalid inputs, service failures, timeout conditions
-- **Boundary conditions**: Maximum/minimum values, empty states
-- **Authorization**: Permission-based access scenarios
+**File location**: `test/[feature]/[feature].test.ts`
 
-Write each test case in the structured comment format first.
+**Structure**:
+```typescript
+/**
+ * BDD Tests: [Feature Name]
+ *
+ * Generated by: /3_define_test_cases
+ * Last updated: [timestamp]
+ * Test coverage: [brief description]
+ */
 
-### 4. Identify Required DSL Functions
+import { test, expect, describe, beforeEach } from "bun:test";
+// Import feature under test
+// Import types
 
-List all DSL functions needed for the test cases:
+// ============================================================================
+// Test Helpers (Only if duplication > 2x)
+// ============================================================================
 
-- **Setup functions**: Functions that arrange test state
-- **Action functions**: Functions that trigger the behavior under test
-- **Assertion functions**: Functions that verify expected outcomes
+// Create helpers ONLY when pattern appears 3+ times
+// Most tests should use direct code with GWT comments
 
-Group them logically (e.g., by domain: orders, users, partners).
+/** [Helper description with usage count] */
+function helperName(...) { ... }
 
-Identify which functions already exist (from step 2) and which need to be created.
+// ============================================================================
+// Phase 1: [Phase Name]
+// ============================================================================
+
+describe("[Phase Name]", () => {
+  // Optional: beforeEach only if shared setup across ALL tests
+  beforeEach(() => { ... });
+
+  test("[specific behavior description]", async () => {
+    // Given: [what exists before]
+
+    // When: [what happens]
+
+    // Then: [what should be true]
+  });
+
+  test("[another behavior]", async () => {
+    // ...
+  });
+});
+
+// ============================================================================
+// Phase 2: [Phase Name]
+// ============================================================================
+
+describe("[Phase Name]", () => {
+  // ... more tests
+});
+```
+
+**Key points**:
+- Use descriptive test names (not generic "it works")
+- Group related tests in describe blocks by feature area/phase
+- Include Given-When-Then comments in every test
+- Use direct expect() calls unless helper significantly reduces duplication
+- Tests should be readable top-to-bottom without scrolling
+
+### 4. Generate Lightweight Index
+
+Create a minimal index file for quick reference:
+
+**File location**: `docs/tickets/TICKET-NAME/test-cases.md`
+
+**Structure**:
+```markdown
+# Test Cases: [Feature Name]
+
+**Test File**: `test/[feature]/[feature].test.ts`
+**Generated**: [timestamp]
+**Total Tests**: [count]
+
+## Quick Start
+
+\```bash
+# Run all tests
+bun test test/[feature]/[feature].test.ts
+
+# Run specific phase
+bun test test/[feature]/[feature].test.ts -t "Phase Name"
+
+# Watch mode
+bun test --watch test/[feature]/[feature].test.ts
+
+# Coverage
+bun test --coverage test/[feature]/[feature].test.ts
+\```
+
+## Test Organization
+
+### Phase 1: [Phase Name] ([count] tests)
+- `[file].test.ts:[line]` - [test description]
+- `[file].test.ts:[line]` - [test description]
+...
+
+### Phase 2: [Phase Name] ([count] tests)
+- `[file].test.ts:[line]` - [test description]
+...
+
+## Coverage Summary
+
+- ✅ Happy paths: [count] tests
+- ✅ Edge cases: [count] tests
+- ✅ Error scenarios: [count] tests
+- ✅ Boundary conditions: [count] tests
+- ✅ Authorization: [count] tests
+```
+
+**Keep it minimal**: Target < 50 lines. Tests are the documentation, this is just an index.
+
+### 5. Determine Ticket Name
+
+If not provided, infer ticket folder from context or ask the user for:
+- Ticket folder name (e.g., "005_web_tools")
+- Feature being tested (e.g., "web-tools", "user-auth")
 
 ## Deliverables
 
-When you complete this command, you must:
+When you complete this command, you must create TWO files:
 
-1. **Create `test-cases.md` file** - Save all test case definitions to `docs/tickets/TICKET-NAME/test-cases.md`:
-   - All test scenarios written in the structured comment format
-   - List of required DSL functions organized by category (setup/action/assertion)
-   - Notes on which DSL functions already exist and which need creation
-   - Pattern alignment notes explaining how test cases follow existing patterns
+### 1. PRIMARY: Test Code File
 
-2. **File Structure** - The `test-cases.md` file should contain:
-   ```markdown
-   # Test Cases: [Feature Name]
-   
-   ## Test Case Definitions
-   
-   [All test cases in structured comment format]
-   
-   ## Required DSL Functions
-   
-   ### Setup Functions
-   - [Existing] functionName - [description]
-   - [New] functionName - [description]
-   
-   ### Action Functions
-   - [Existing] functionName - [description]
-   - [New] functionName - [description]
-   
-   ### Assertion Functions
-   - [Existing] functionName - [description]
-   - [New] functionName - [description]
-   
-   ## Pattern Alignment
-   
-   [Notes on how these follow existing test patterns]
-   ```
+**Location**: `test/[feature]/[feature].test.ts`
 
-3. **Determine Ticket Name** - If not provided, infer from context or ask the user for the ticket folder name
+**Contents**:
+- File header with metadata
+- Import statements
+- Test helpers (only if duplication > 2x)
+- Describe blocks organized by phase/feature area
+- Tests with Given-When-Then structure
+- Direct assertions (no unnecessary abstraction)
 
-Remember: The goal is to make tests read like specifications. Focus on clearly defining WHAT needs to be tested, following existing project patterns. The `test-cases.md` file will be used by step 4 (implementation) and step 5 (validation).
+**Verification checklist**:
+- [ ] File passes `bun run typecheck`
+- [ ] Tests are runnable (may fail if production code doesn't exist yet)
+- [ ] Given-When-Then comments are clear
+- [ ] Helpers only created when justified (3+ uses)
+- [ ] Test names are descriptive
+- [ ] Coverage includes happy paths, edge cases, errors, boundaries
+
+### 2. SECONDARY: Lightweight Index
+
+**Location**: `docs/tickets/TICKET-NAME/test-cases.md`
+
+**Contents**:
+- Test file reference
+- Quick command examples
+- Test organization (phase → line numbers)
+- Coverage summary
+
+**Verification checklist**:
+- [ ] File is < 50 lines
+- [ ] Line numbers reference actual test file
+- [ ] Commands are correct (bun test paths)
+- [ ] Coverage counts are accurate
+
+## Example Output
+
+After running `/3_define_test_cases web-tools`, you would create:
+
+**File 1**: `test/tools/web.test.ts` (~300-400 lines)
+- Actual runnable tests with Given-When-Then structure
+- Minimal helpers (only createMockState, used 15+ times)
+- 25 tests covering all scenarios
+
+**File 2**: `docs/tickets/005_web_tools/test-cases.md` (~40 lines)
+- Lightweight index with line references
+- Quick start commands
+- Coverage summary
+
+## Important Notes
+
+- **Tests are specifications**: They define correct behavior, not just verify it
+- **Executable documentation**: Tests run and prove the spec is correct
+- **No duplication**: test-cases.md doesn't duplicate test content, just indexes it
+- **Step 4 implements production code**: Tests already exist, step 4 makes them pass
+- **Step 5 validates by running tests**: No manual verification needed
+
+Remember: The goal is to make tests the living documentation. Focus on clarity and readability over clever abstractions.
