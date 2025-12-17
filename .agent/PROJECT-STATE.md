@@ -27,6 +27,8 @@ Tracks feature parity with LangChain's DeepAgents framework. Reference implement
 - [x] **Middleware Architecture** - AI SDK v6 `wrapLanguageModel` support for logging, caching, RAG, guardrails; supports single or array of middleware; non-breaking addition via optional `middleware` parameter
 - [x] **Skills System** - Dynamic skill loading from SKILL.md files with YAML frontmatter; progressive disclosure pattern (metadata in system prompt, full content loaded on-demand); supports user-level and project-level skills with override logic
 - [x] **Agent Memory Middleware** - Long-term memory from agent.md files (plain markdown); two-tier system (user: `~/.deepagents/{agentId}/agent.md`, project: `[git-root]/.deepagents/agent.md`); closure-based caching for performance; auto-creates user directory, requests approval for project directory; supports additional .md files for specialized context; skills also load from `.deepagents/{agentId}/skills/`
+- [x] **readRaw Backend Method** - Raw FileData without line formatting (implemented in all backends)
+- [x] **Per-Subagent Interrupt Config** - Different HITL rules per subagent (via `SubAgent.interruptOn`)
 
 ---
 
@@ -57,9 +59,7 @@ _No critical features pending_
 - [ ] **Structured Output** - `responseFormat` for typed agent outputs
 - [ ] **Context Schema** - Custom state types beyond default
 - [ ] **Compiled Subagents** - Pre-built runnable subagent instances
-- [x] **readRaw Backend Method** - Raw FileData without line formatting (implemented in all backends)
 - [ ] **Custom Tool Descriptions** - Override default tool descriptions
-- [x] **Per-Subagent Interrupt Config** - Different HITL rules per subagent (via `SubAgent.interruptOn`)
 - [ ] **Cache Support** - Response caching via BaseCache
 
 ---
