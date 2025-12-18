@@ -4,7 +4,11 @@ import * as path from "node:path";
 import os from "node:os";
 import { createAgentMemoryMiddleware } from "../../src/middleware/agent-memory.ts";
 import { createDeepAgent } from "../../src/agent.ts";
-import { anthropic } from "@ai-sdk/anthropic";
+import { createAnthropic } from '@ai-sdk/anthropic';
+
+const anthropic = createAnthropic({
+  baseURL: 'https://api.anthropic.com/v1',
+});
 
 // Skip tests if no API key
 const hasApiKey = !!process.env.ANTHROPIC_API_KEY;

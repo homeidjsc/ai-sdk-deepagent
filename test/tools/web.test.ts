@@ -1,10 +1,13 @@
 /**
  * Unit tests for web tools (web_search, http_request, fetch_url).
  */
-import { test, expect, describe, beforeEach, mock } from "bun:test";
+import { test, expect, describe, beforeEach, afterEach, mock } from "bun:test";
 import { createWebTools } from "../../src/tools/web.ts";
 import type { DeepAgentState, DeepAgentEvent } from "../../src/types.ts";
 import { StateBackend } from "../../src/backends/state.ts";
+
+// Store original fetch to restore after tests
+const originalFetch = globalThis.fetch;
 
 // ============================================================================
 // Test Helpers
@@ -109,6 +112,11 @@ describe("createWebTools - Tool Creation", () => {
     mockState = createMockState();
   });
 
+  afterEach(() => {
+    // Restore original fetch after each test
+    globalThis.fetch = originalFetch;
+  });
+
   test("returns empty object when no API key provided", () => {
     // Save original env var and unset it
     const originalKey = process.env.TAVILY_API_KEY;
@@ -198,6 +206,11 @@ describe("http_request tool", () => {
 
   beforeEach(() => {
     mockState = createMockState();
+  });
+
+  afterEach(() => {
+    // Restore original fetch after each test
+    globalThis.fetch = originalFetch;
   });
 
   test("executes GET request successfully", async () => {
@@ -376,6 +389,11 @@ describe("fetch_url tool", () => {
     mockState = createMockState();
   });
 
+  afterEach(() => {
+    // Restore original fetch after each test
+    globalThis.fetch = originalFetch;
+  });
+
   test("converts HTML to Markdown", async () => {
     mockFetchHtmlResponse(
       "<html><body><h1>Test Title</h1><p>Test content paragraph.</p></body></html>"
@@ -533,6 +551,11 @@ describe("Result Eviction", () => {
     backend = new StateBackend(mockState);
   });
 
+  afterEach(() => {
+    // Restore original fetch after each test
+    globalThis.fetch = originalFetch;
+  });
+
   test("large results are evicted to filesystem", async () => {
     // Create large HTML content (>10KB)
     const largeHtml =
@@ -613,6 +636,11 @@ describe("web_search tool", () => {
 // ============================================================================
 
 describe("Integration", () => {
+  afterEach(() => {
+    // Restore original fetch after each test
+    globalThis.fetch = originalFetch;
+  });
+
   test("all web tools have proper descriptions", () => {
     const mockState = createMockState();
     const tools = createWebTools(mockState, { tavilyApiKey: "tvly-test-key" });

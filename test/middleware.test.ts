@@ -1,7 +1,11 @@
 import { test, expect } from "bun:test";
 import { createDeepAgent } from "../src/agent.ts";
-import { anthropic } from "@ai-sdk/anthropic";
+import { createAnthropic } from '@ai-sdk/anthropic';
 import type { LanguageModelMiddleware } from "ai";
+
+const anthropic = createAnthropic({
+  baseURL: 'https://api.anthropic.com/v1',
+});
 
 // Skip tests if no API key
 const hasApiKey = !!process.env.ANTHROPIC_API_KEY;

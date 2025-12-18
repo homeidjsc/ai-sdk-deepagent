@@ -629,6 +629,13 @@ export class DeepAgent {
           updatedAt: new Date().toISOString(),
         };
         await this.checkpointer.save(finalCheckpoint);
+
+        // Emit checkpoint-saved event for final checkpoint
+        yield {
+          type: "checkpoint-saved",
+          threadId,
+          step: baseStep + stepNumber,
+        };
       }
     } catch (error) {
       // Yield error event

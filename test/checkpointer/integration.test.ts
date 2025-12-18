@@ -7,8 +7,12 @@
 
 import { test, expect, beforeEach } from "bun:test";
 import { createDeepAgent, MemorySaver, FileSaver } from "../../src/index.ts";
-import { anthropic } from "@ai-sdk/anthropic";
+import { createAnthropic } from '@ai-sdk/anthropic';
 import { rmSync, existsSync } from "node:fs";
+
+const anthropic = createAnthropic({
+  baseURL: 'https://api.anthropic.com/v1',
+});
 
 // Skip tests if no API key
 const hasApiKey = !!process.env.ANTHROPIC_API_KEY;
